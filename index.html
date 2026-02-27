@@ -26,7 +26,7 @@
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center">
                 <div>
                     <h2 class="font-bold text-slate-800">Daftar Kehadiran</h2>
-                    <p id="currentDateLabel" class="text-xs text-slate-500 italic">Sinkronisasi GitHub...</p>
+                    <p id="currentDateLabel" class="text-xs text-slate-500 italic">Menghubungkan ke GitHub...</p>
                 </div>
                 <div class="text-right">
                     <span id="counter" class="text-2xl font-black text-blue-600">0</span>
@@ -77,12 +77,11 @@
     </main>
 
     <script>
-        // --- KONFIGURASI GITHUB ---
         const GH_CONFIG = {
-            token: "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", // Masukkan Token PAT Anda di sini
-            owner: "sanzkukis-debug",     // Username GitHub Anda
-            repo: "7j-mnj",     // Nama Repositori
-            path: "data.json"           // Nama file JSON di repo
+            token: "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", 
+            owner: "sanzkukis-debug",     
+            repo: "7j-mnj",     
+            path: "data.json"           
         };
 
         let attendanceData = [];
@@ -92,20 +91,28 @@
 
         const getRawToday = () => new Date().toISOString().split('T')[0];
 
-        // 1. AMBIL DATA DARI GITHUB
+        // 1. AMBIL DATA DARI GITHUB (DISETEL AGAR TIDAK ERROR MESKI DATA KOSONG)
         async function fetchData() {
             try {
                 const response = await fetch(`https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.path}`, {
                     headers: { "Authorization": `token ${GH_CONFIG.token}` }
                 });
-                const data = await response.json();
-                fileSha = data.sha;
-                attendanceData = JSON.parse(atob(data.content));
-                renderGrid();
-                renderHistory();
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    fileSha = data.sha;
+                    attendanceData = JSON.parse(atob(data.content));
+                } else {
+                    console.warn("File tidak ditemukan atau akses ditolak, menggunakan data kosong.");
+                    attendanceData = [];
+                }
             } catch (e) {
                 console.error("Gagal sinkronisasi:", e);
-                document.getElementById('currentDateLabel').innerText = "Gagal terhubung ke GitHub";
+                attendanceData = [];
+            } finally {
+                // APAPUN HASILNYA, GRID TETAP HARUS MUNCUL
+                renderGrid();
+                renderHistory();
             }
         }
 
@@ -144,13 +151,13 @@
                 });
 
                 if(res.ok) {
-                    await fetchData(); // Refresh data setelah simpan
+                    await fetchData();
                     showView('grid');
                 } else {
-                    throw new Error();
+                    alert("Gagal menyimpan. Pastikan file data.json sudah ada di GitHub.");
                 }
             } catch (e) {
-                alert("Gagal update data ke GitHub!");
+                alert("Gagal koneksi ke GitHub!");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = `<i data-lucide="send" class="w-5 h-5"></i> Simpan ke GitHub`;
@@ -178,10 +185,12 @@
 
         window.renderGrid = () => {
             const container = document.getElementById('studentContainer');
+            if(!container) return;
             container.innerHTML = '';
             const today = getRawToday();
             let count = 0;
 
+            // Perulangan 1-34 tetap jalan meskipun attendanceData kosong
             for (let i = 1; i <= 34; i++) {
                 const record = attendanceData.find(a => a.studentId === i && a.date === today);
                 const isDone = !!record;
@@ -207,6 +216,7 @@
 
         window.renderHistory = () => {
             const list = document.getElementById('historyList');
+            if(!list) return;
             const selectedDate = document.getElementById('filterDate').value;
             list.innerHTML = '';
             
@@ -234,9 +244,9 @@
             });
         };
 
-        // EVENT LISTENERS
         document.getElementById('btnHistory').onclick = () => {
-            const isH = !document.getElementById('viewHistory').classList.contains('hidden');
+            const viewH = document.getElementById('viewHistory');
+            const isH = !viewH.classList.contains('hidden');
             showView(isH ? 'grid' : 'history');
             document.getElementById('btnHistory').innerText = isH ? 'Riwayat' : 'Kembali';
         };
@@ -244,10 +254,18 @@
         document.getElementById('filterDate').onchange = renderHistory;
         document.getElementById('btnSave').onclick = saveToGithub;
 
-        // INIT
         document.getElementById('filterDate').value = getRawToday();
+        
+        // PENTING: Panggil fetchData saat pertama kali buka
         fetchData();
-        setTimeout(() => lucide.createIcons(), 500);
+        
+        // Timer cadangan jika koneksi sangat lambat, paksa render nomor 1-34
+        setTimeout(() => {
+            if(document.getElementById('studentContainer').innerHTML === "") {
+                renderGrid();
+            }
+            lucide.createIcons();
+        }, 1000);
     </script>
 </body>
 </html>
