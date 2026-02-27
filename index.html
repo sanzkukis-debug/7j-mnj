@@ -85,7 +85,7 @@
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
 
                 try {
-                    const r = await fetch(`https://github.com/sanzkukis-debug/7j-mnj/data.json`, {
+                    const r = await fetch(`https://api.github.com/sanzkukis-debug/7j-mnj/data.json`, {
                         headers: { Authorization: `token ${this.config.token}` },
                         signal: controller.signal
                     });
@@ -240,3 +240,4 @@
     </script>
 </body>
 </html>
+
