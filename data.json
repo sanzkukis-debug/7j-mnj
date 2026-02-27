@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "id": 1,
+    "name": "Siswa 1",
+    "status": "Masuk",
+    "note": "",
+    "date": "2024-05-20",
+    "time": 1716180000000
+  },
+  {
+    "id": 2,
+    "name": "Siswa 2",
+    "status": "Izin",
+    "note": "Acara keluarga",
+    "date": "2024-05-20",
+    "time": 1716180500000
+  }
+]
