@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi Kelas 7J - GitHub Mode</title>
+    <title>Absensi Kelas 7J - GitHub Database</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .status-active-masuk { @apply bg-green-50 border-green-500 text-green-700; }
+        .status-active-izin { @apply bg-amber-50 border-amber-500 text-amber-700; }
+        .status-active-sakit { @apply bg-red-50 border-red-500 text-red-700; }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans">
 
@@ -26,7 +31,7 @@
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center">
                 <div>
                     <h2 class="font-bold text-slate-800">Daftar Kehadiran</h2>
-                    <p id="currentDateLabel" class="text-xs text-slate-500 italic">Menghubungkan ke GitHub...</p>
+                    <p id="currentDateLabel" class="text-xs text-slate-500 italic font-medium">Memuat data...</p>
                 </div>
                 <div class="text-right">
                     <span id="counter" class="text-2xl font-black text-blue-600">0</span>
@@ -42,23 +47,23 @@
             </button>
             <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
                 <div class="bg-blue-700 p-8 text-center text-white">
-                    <h2 id="selectedStudentName" class="text-2xl font-bold"></h2>
+                    <h2 id="selectedStudentName" class="text-2xl font-bold">Nama Siswa</h2>
                     <p id="selectedStudentInfo" class="text-blue-100 text-sm"></p>
                 </div>
                 <div class="p-6 space-y-6">
                     <div class="grid grid-cols-3 gap-3">
-                        <button onclick="setStatus('Masuk')" id="btnMasuk" class="status-btn py-4 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-2 transition-all">
+                        <button onclick="setStatus('Masuk')" id="btnMasuk" class="status-btn py-4 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-2 transition-all border-slate-100 text-slate-400">
                             <i data-lucide="check-circle"></i> MASUK
                         </button>
-                        <button onclick="setStatus('Izin')" id="btnIzin" class="status-btn py-4 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-2 transition-all">
+                        <button onclick="setStatus('Izin')" id="btnIzin" class="status-btn py-4 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-2 transition-all border-slate-100 text-slate-400">
                             <i data-lucide="clock"></i> IZIN
                         </button>
-                        <button onclick="setStatus('Sakit')" id="btnSakit" class="status-btn py-4 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-2 transition-all">
+                        <button onclick="setStatus('Sakit')" id="btnSakit" class="status-btn py-4 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-2 transition-all border-slate-100 text-slate-400">
                             <i data-lucide="x-circle"></i> SAKIT
                         </button>
                     </div>
                     <textarea id="reasonInput" placeholder="Keterangan (Wajib jika Izin/Sakit)..." class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm h-28 focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
-                    <button id="btnSave" class="w-full bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 disabled:bg-slate-300">
+                    <button id="btnSave" onclick="saveToGithub()" class="w-full bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 disabled:bg-slate-300">
                         <i data-lucide="send" class="w-5 h-5"></i> Simpan ke GitHub
                     </button>
                 </div>
@@ -77,12 +82,19 @@
     </main>
 
     <script>
+        // --- KONFIGURASI ---
         const GH_CONFIG = {
             token: "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", 
             owner: "sanzkukis-debug",     
             repo: "7j-mnj",     
             path: "data.json"           
         };
+
+        // Data Nama Siswa (Sesuaikan dengan data asli)
+        const STUDENT_LIST = Array.from({length: 34}, (_, i) => ({
+            id: i + 1,
+            name: `Siswa Absen ${i + 1}` // Ganti dengan nama asli siswa
+        }));
 
         let attendanceData = [];
         let currentStatus = 'Masuk';
@@ -91,43 +103,40 @@
 
         const getRawToday = () => new Date().toISOString().split('T')[0];
 
-        // 1. AMBIL DATA DARI GITHUB (DISETEL AGAR TIDAK ERROR MESKI DATA KOSONG)
+        // --- FUNGSI DATA ---
+
         async function fetchData() {
+            document.getElementById('currentDateLabel').innerText = "Menghubungkan...";
             try {
-                const response = await fetch(`https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.path}`, {
-                    headers: { "Authorization": `token ${GH_CONFIG.token}` }
+                const response = await fetch(`https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.path}?t=${new Date().getTime()}`, {
+                    headers: { "Authorization": `token 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` }
                 });
                 
                 if (response.ok) {
                     const data = await response.json();
                     fileSha = data.sha;
                     attendanceData = JSON.parse(atob(data.content));
-                } else {
-                    console.warn("File tidak ditemukan atau akses ditolak, menggunakan data kosong.");
-                    attendanceData = [];
                 }
             } catch (e) {
                 console.error("Gagal sinkronisasi:", e);
-                attendanceData = [];
             } finally {
-                // APAPUN HASILNYA, GRID TETAP HARUS MUNCUL
                 renderGrid();
                 renderHistory();
             }
         }
 
-        // 2. SIMPAN DATA KE GITHUB
         async function saveToGithub() {
-            const reason = document.getElementById('reasonInput').value;
+            const reason = document.getElementById('reasonInput').value.trim();
             if(currentStatus !== 'Masuk' && !reason) return alert('Alasan wajib diisi!');
             
             const btn = document.getElementById('btnSave');
             btn.disabled = true;
             btn.innerText = "Mengunggah...";
 
+            const student = STUDENT_LIST.find(s => s.id === currentStudent);
             const newData = {
                 studentId: currentStudent,
-                studentName: `Siswa Absen ${currentStudent}`,
+                studentName: student.name,
                 status: currentStatus,
                 reason: reason,
                 date: getRawToday(),
@@ -137,14 +146,14 @@
             const updatedData = [...attendanceData, newData];
 
             try {
-                const res = await fetch(`https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.path}`, {
+                const res = await fetch(`https://api.github.com/repos/sanzkukis-debug/7j-mnj/contents/data.json}`, {
                     method: "PUT",
                     headers: {
                         "Authorization": `token ${GH_CONFIG.token}`,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        message: `Absen Siswa ${currentStudent} [${getRawToday()}]`,
+                        message: `Absen: ${student.name} [${currentStatus}]`,
                         content: btoa(JSON.stringify(updatedData, null, 2)),
                         sha: fileSha
                     })
@@ -154,10 +163,10 @@
                     await fetchData();
                     showView('grid');
                 } else {
-                    alert("Gagal menyimpan. Pastikan file data.json sudah ada di GitHub.");
+                    alert("Gagal simpan! Pastikan token valid & file ada.");
                 }
             } catch (e) {
-                alert("Gagal koneksi ke GitHub!");
+                alert("Kesalahan jaringan!");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = `<i data-lucide="send" class="w-5 h-5"></i> Simpan ke GitHub`;
@@ -178,45 +187,48 @@
             document.querySelectorAll('.status-btn').forEach(btn => {
                 btn.className = "status-btn py-4 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-2 border-slate-100 text-slate-400";
             });
-            const colors = { 'Masuk': 'green', 'Izin': 'amber', 'Sakit': 'red' };
-            const activeBtn = document.getElementById(`btn${status}`);
-            activeBtn.className = `status-btn py-4 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-2 bg-${colors[status]}-50 border-${colors[status]}-500 text-${colors[status]}-700`;
+            
+            const btn = document.getElementById(`btn${status}`);
+            if(status === 'Masuk') btn.classList.add('bg-green-50', 'border-green-500', 'text-green-700');
+            if(status === 'Izin') btn.classList.add('bg-amber-50', 'border-amber-500', 'text-amber-700');
+            if(status === 'Sakit') btn.classList.add('bg-red-50', 'border-red-500', 'text-red-700');
         };
 
         window.renderGrid = () => {
             const container = document.getElementById('studentContainer');
-            if(!container) return;
             container.innerHTML = '';
             const today = getRawToday();
             let count = 0;
 
-            // Perulangan 1-34 tetap jalan meskipun attendanceData kosong
-            for (let i = 1; i <= 34; i++) {
-                const record = attendanceData.find(a => a.studentId === i && a.date === today);
+            STUDENT_LIST.forEach(student => {
+                const record = attendanceData.find(a => a.studentId === student.id && a.date === today);
                 const isDone = !!record;
                 if(isDone) count++;
 
                 const btn = document.createElement('button');
-                btn.className = `aspect-square rounded-2xl border-2 flex flex-col items-center justify-center transition-all ${isDone ? 'bg-green-50 border-green-500 text-green-700' : 'bg-white border-slate-200 text-slate-600'}`;
-                btn.innerHTML = `<span class="text-xl font-black">${i}</span><span class="text-[8px] font-bold uppercase">${isDone ? record.status : 'Belum'}</span>`;
+                btn.className = `aspect-square rounded-2xl border-2 flex flex-col items-center justify-center transition-all ${isDone ? 'bg-green-50 border-green-500 text-green-700 shadow-inner' : 'bg-white border-slate-200 text-slate-600 shadow-sm'}`;
+                btn.innerHTML = `
+                    <span class="text-xl font-black">${student.id}</span>
+                    <span class="text-[8px] font-bold uppercase">${isDone ? record.status : 'BELUM'}</span>
+                `;
                 btn.onclick = () => {
-                    if(isDone) return alert('Siswa ini sudah diabsen hari ini!');
-                    currentStudent = i;
-                    document.getElementById('selectedStudentName').innerText = `Siswa No. ${i}`;
-                    document.getElementById('selectedStudentInfo').innerText = `Tanggal: ${today}`;
+                    if(isDone) return alert(`${student.name} sudah diabsen hari ini!`);
+                    currentStudent = student.id;
+                    document.getElementById('selectedStudentName').innerText = student.name;
+                    document.getElementById('selectedStudentInfo').innerText = `Nomor Absen: ${student.id} | ${today}`;
                     setStatus('Masuk');
                     document.getElementById('reasonInput').value = '';
                     showView('detail');
                 };
                 container.appendChild(btn);
-            }
+            });
+            
             document.getElementById('counter').innerText = count;
             document.getElementById('currentDateLabel').innerText = today;
         };
 
         window.renderHistory = () => {
             const list = document.getElementById('historyList');
-            if(!list) return;
             const selectedDate = document.getElementById('filterDate').value;
             list.innerHTML = '';
             
@@ -225,7 +237,7 @@
                 .sort((a, b) => b.timestamp - a.timestamp);
 
             if(filtered.length === 0) {
-                list.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm">Tidak ada data untuk tanggal ini.</div>`;
+                list.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm italic">Belum ada data kehadiran.</div>`;
                 return;
             }
 
@@ -233,39 +245,35 @@
                 const div = document.createElement('div');
                 div.className = "bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3";
                 div.innerHTML = `
-                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center font-bold">${rec.studentId}</div>
+                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold shadow-sm">${rec.studentId}</div>
                     <div class="flex-1">
-                        <p class="font-bold text-sm">Siswa ${rec.studentId} <span class="text-[9px] px-2 py-0.5 rounded-full bg-slate-100 uppercase font-bold">${rec.status}</span></p>
-                        <p class="text-[10px] text-slate-400">${rec.date}</p>
-                        ${rec.reason ? `<p class="text-xs text-slate-500 italic mt-1">"${rec.reason}"</p>` : ''}
+                        <p class="font-bold text-sm text-slate-800">${rec.studentName}</p>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${rec.status === 'Masuk' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${rec.status}</span>
+                            <span class="text-[10px] text-slate-400 font-medium">${rec.date}</span>
+                        </div>
+                        ${rec.reason ? `<p class="text-xs text-slate-500 italic mt-2 border-l-2 border-slate-200 pl-2">"${rec.reason}"</p>` : ''}
                     </div>
                 `;
                 list.appendChild(div);
             });
         };
 
+        // --- EVENT LISTENERS ---
+
         document.getElementById('btnHistory').onclick = () => {
             const viewH = document.getElementById('viewHistory');
-            const isH = !viewH.classList.contains('hidden');
-            showView(isH ? 'grid' : 'history');
-            document.getElementById('btnHistory').innerText = isH ? 'Riwayat' : 'Kembali';
+            const isHidden = viewH.classList.contains('hidden');
+            showView(isHidden ? 'history' : 'grid');
+            document.getElementById('btnHistory').innerText = isHidden ? 'Kembali' : 'Riwayat';
         };
 
         document.getElementById('filterDate').onchange = renderHistory;
-        document.getElementById('btnSave').onclick = saveToGithub;
-
         document.getElementById('filterDate').value = getRawToday();
         
-        // PENTING: Panggil fetchData saat pertama kali buka
+        // Jalankan aplikasi
         fetchData();
-        
-        // Timer cadangan jika koneksi sangat lambat, paksa render nomor 1-34
-        setTimeout(() => {
-            if(document.getElementById('studentContainer').innerHTML === "") {
-                renderGrid();
-            }
-            lucide.createIcons();
-        }, 1000);
+        lucide.createIcons();
     </script>
 </body>
 </html>
