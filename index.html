@@ -21,7 +21,7 @@
         <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
             <div>
                 <h1 class="text-xl font-bold text-blue-600">Absensi 7J</h1>
-                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Excel Sync System</p>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Excel Database System</p>
             </div>
             <div id="liveClock" class="text-sm font-bold text-slate-600">00:00</div>
         </div>
@@ -44,7 +44,7 @@
             <div class="bg-white rounded-[2rem] p-6 border border-slate-200 shadow-sm">
                 <div class="mb-8">
                     <h2 id="detNama" class="text-3xl font-extrabold text-slate-800">Siswa --</h2>
-                    <p class="text-[11px] text-slate-400 font-medium uppercase mt-1">Simpan data ke database Excel</p>
+                    <p class="text-[11px] text-slate-400 font-medium uppercase mt-1">Data akan disimpan ke Google Sheets</p>
                 </div>
 
                 <div class="space-y-8">
@@ -78,8 +78,7 @@
     </main>
 
     <script>
-        // --- CONFIG ---
-        // WA_NUMBER telah dihapus
+        // --- CONFIGURATION ---
         const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfNMc8EVHqtqEHs1XRZZjW9F9NpjoY57YQXq4a6ic7Js/formResponse";
         
         const FORM_ENTRIES = {
@@ -91,18 +90,22 @@
         let selectedId = null;
         let currentStatus = 'Masuk';
 
+        // --- TIME FUNCTIONS ---
         function updateTime() {
             const now = new Date();
-            document.getElementById('liveDate').innerText = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+            document.getElementById('liveDate').innerText = now.toLocaleDateString('id-ID', options);
             document.getElementById('liveClock').innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         }
         setInterval(updateTime, 1000);
         updateTime();
 
+        // --- UI CONTROLLER ---
         const ui = {
             show(view) {
                 document.getElementById('viewGrid').classList.toggle('hidden', view !== 'grid');
                 document.getElementById('viewDetail').classList.toggle('hidden', view !== 'detail');
+                window.scrollTo(0, 0);
             },
             setStatus(s) {
                 currentStatus = s;
@@ -114,6 +117,7 @@
             },
             renderGrid() {
                 const container = document.getElementById('studentContainer');
+                container.innerHTML = '';
                 for (let i = 1; i <= 34; i++) {
                     const btn = document.createElement('button');
                     btn.className = "aspect-square rounded-2xl border-2 border-slate-200 bg-white text-slate-800 flex flex-col items-center justify-center active:scale-90 transition-transform";
@@ -130,31 +134,42 @@
             }
         };
 
+        // --- SAVE DATA LOGIC ---
         document.getElementById('btnSave').onclick = async () => {
             const note = document.getElementById('reasonInput').value.trim();
-            if (currentStatus !== 'Masuk' && !note) return alert("Alasan wajib diisi!");
+            
+            // Validasi: Jika tidak masuk, alasan wajib diisi
+            if (currentStatus !== 'Masuk' && !note) {
+                return alert("Harap isi alasan (Izin/Sakit) pada kolom catatan!");
+            }
 
             const btn = document.getElementById('btnSave');
             btn.disabled = true;
-            btn.innerText = "MENYIMPAN...";
+            btn.innerText = "SEDANG MENYIMPAN...";
 
-            // 1. KIRIM KE GOOGLE SHEETS (Hanya ini yang dipertahankan)
-            const formData = new FormData();
-            formData.append(FORM_ENTRIES.noAbsen, selectedId);
-            formData.append(FORM_ENTRIES.status, currentStatus);
-            formData.append(FORM_ENTRIES.catatan, note || '-');
+            // Membungkus data ke format URL Search Params (paling stabil untuk Google Form)
+            const params = new URLSearchParams();
+            params.append(FORM_ENTRIES.noAbsen, selectedId);
+            params.append(FORM_ENTRIES.status, currentStatus);
+            params.append(FORM_ENTRIES.catatan, note || '-');
 
             try {
+                // Mengirim ke Google Form dengan mode no-cors
                 await fetch(GOOGLE_FORM_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: params.toString()
                 });
                 
-                alert("Data berhasil tersimpan ke Excel!");
-                ui.show('grid'); // Kembali ke menu utama setelah sukses
+                // Notifikasi Sukses
+                alert(`Absensi Siswa No. ${selectedId} (${currentStatus}) berhasil disimpan.`);
+                ui.show('grid'); 
             } catch (error) {
-                alert("Gagal menyimpan data. Periksa koneksi internet.");
+                console.error("Submission error:", error);
+                alert("Gagal mengirim data. Pastikan Anda terhubung ke internet.");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = `<i data-lucide="save" class="w-5 h-5 text-green-400"></i> SIMPAN DATA`;
@@ -162,6 +177,7 @@
             }
         };
 
+        // Inisialisasi awal
         ui.renderGrid();
         lucide.createIcons();
     </script>
