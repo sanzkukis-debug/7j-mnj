@@ -3,183 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi 7J - Database Excel</title>
+    <title>Dashboard Kelas 7J</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .status-btn { border: 2px solid #f1f5f9; color: #94a3b8; background: white; transition: all 0.2s; }
-        .active-masuk { border-color: #22c55e !important; background-color: #f0fdf4 !important; color: #15803d !important; }
-        .active-izin { border-color: #f59e0b !important; background-color: #fffbeb !important; color: #b45309 !important; }
-        .active-sakit { border-color: #ef4444 !important; background-color: #fef2f2 !important; color: #b91c1c !important; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f8fafc;
+        }
+        .modal-active {
+            display: flex !important;
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="text-slate-900">
 
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
+    <div class="max-w-md mx-auto px-6 pt-10 pb-6">
+        <div class="flex items-center justify-between mb-2">
             <div>
-                <h1 class="text-xl font-bold text-blue-600">Absensi 7J</h1>
-                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Excel Database System</p>
+                <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Halo Manusia</h1>
+                <p class="text-slate-500 font-medium">Selamat datang di Kelas 7J</p>
             </div>
-            <div id="liveClock" class="text-sm font-bold text-slate-600">00:00</div>
-        </div>
-    </header>
-
-    <main class="max-w-md mx-auto p-4 pb-20">
-        <div id="viewGrid" class="space-y-4">
-            <div class="bg-blue-600 rounded-3xl p-6 text-white shadow-xl">
-                <h2 class="text-lg font-bold text-white">Input Absen Hari Ini</h2>
-                <p class="text-blue-100 text-xs" id="liveDate">Memuat...</p>
+            <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                <i data-lucide="layout-grid" class="w-6 h-6"></i>
             </div>
-            <div id="studentContainer" class="grid grid-cols-4 gap-3"></div>
         </div>
+    </div>
 
-        <div id="viewDetail" class="hidden space-y-4">
-            <button onclick="ui.show('grid')" class="flex items-center gap-2 text-slate-500 font-bold text-xs py-2">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i> KEMBALI
+    <main class="max-w-md mx-auto px-6 space-y-6">
+        
+        <a href="absen.html" class="block group relative overflow-hidden p-6 bg-blue-600 rounded-[2.5rem] shadow-xl shadow-blue-300 transition-all active:scale-95">
+            <div class="relative z-10 flex flex-col min-h-[100px]"> 
+                
+                <div class="flex justify-between items-start h-[45px] -mt-2 mb-2">
+                    <div class="p-3 bg-white/10 rounded-full">
+                        <i data-lucide="user-check" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <i data-lucide="arrow-right-circle" class="w-10 h-11 text-white/90 group-hover:text-white transition-transform group-hover:translate-x-1"></i>
+                </div>
+
+                <div class="mt-auto">
+                    <h2 class="text-2xl font-bold text-white">Input Absensi</h2>
+                    <p class="text-blue-100 font-semibold text-white">Mulai rekam kehadiran hari ini</p>
+                </div>
+            </div>
+
+            <div class="absolute -right-10 -top-10 w-24 h-24 bg-white/10 rounded-full"></div>
+            <div class="absolute -left-10 -bottom-10 w-24 h-24 bg-white/10 rounded-full"></div>
+        </a>
+
+        <div class="grid grid-cols-2 gap-4">
+            <button onclick="openModal('modalJadwal')" class="p-6 bg-white border-2 border-slate-100 rounded-[2rem] text-left transition-all hover:border-blue-400 active:scale-95 shadow-sm">
+                <div class="p-3 bg-indigo-50 rounded-2xl inline-block mb-4">
+                    <i data-lucide="calendar" class="w-6 h-6 text-indigo-600"></i>
+                </div>
+                <h3 class="font-bold text-slate-800">Jadwal</h3>
+                <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">Pelajaran</p>
             </button>
 
-            <div class="bg-white rounded-[2rem] p-6 border border-slate-200 shadow-sm">
-                <div class="mb-8">
-                    <h2 id="detNama" class="text-3xl font-extrabold text-slate-800">Siswa --</h2>
-                    <p class="text-[11px] text-slate-400 font-medium uppercase mt-1">Data akan disimpan ke Google Sheets</p>
+            <button onclick="openModal('modalSiswa')" class="p-6 bg-white border-2 border-slate-100 rounded-[2rem] text-left transition-all hover:border-blue-400 active:scale-95 shadow-sm">
+                <div class="p-3 bg-orange-50 rounded-2xl inline-block mb-4">
+                    <i data-lucide="users" class="w-6 h-6 text-orange-600"></i>
                 </div>
+                <h3 class="font-bold text-slate-800">Siswa</h3>
+                <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">Cek Nomor</p>
+            </button>
+        </div>
 
-                <div class="space-y-8">
-                    <div class="grid grid-cols-3 gap-3">
-                        <button id="stMasuk" onclick="ui.setStatus('Masuk')" class="status-btn p-4 rounded-2xl flex flex-col items-center gap-2">
-                            <i data-lucide="check-circle" class="w-6 h-6"></i>
-                            <span class="font-bold text-[10px]">MASUK</span>
-                        </button>
-                        <button id="stIzin" onclick="ui.setStatus('Izin')" class="status-btn p-4 rounded-2xl flex flex-col items-center gap-2">
-                            <i data-lucide="clock" class="w-6 h-6"></i>
-                            <span class="font-bold text-[10px]">IZIN</span>
-                        </button>
-                        <button id="stSakit" onclick="ui.setStatus('Sakit')" class="status-btn p-4 rounded-2xl flex flex-col items-center gap-2">
-                            <i data-lucide="thermometer" class="w-6 h-6"></i>
-                            <span class="font-bold text-[10px]">SAKIT</span>
-                        </button>
-                    </div>
-
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-3 pl-1">Catatan</label>
-                        <textarea id="reasonInput" rows="3" placeholder="Alasan jika tidak masuk..." 
-                            class="w-full rounded-2xl border-2 border-slate-100 p-4 text-sm focus:border-blue-500 outline-none bg-slate-50"></textarea>
-                    </div>
-
-                    <button id="btnSave" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-transform">
-                        <i data-lucide="save" class="w-5 h-5 text-green-400"></i> SIMPAN DATA
-                    </button>
-                </div>
-            </div>
+        <div class="p-4 bg-emerald-50 rounded-3xl border border-emerald-100 flex items-center gap-4">
+            <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+            <p class="text-xs font-semibold text-emerald-700">Database Excel Terhubung Otomatis</p>
         </div>
     </main>
 
+    <div id="modalJadwal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md p-4 items-end sm:items-center justify-center">
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-8 max-h-[85vh] overflow-y-auto shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold">Jadwal Pelajaran</h3>
+                <button onclick="closeModal('modalJadwal')" class="p-2 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-3" id="jadwalContent"></div>
+        </div>
+    </div>
+
+    <div id="modalSiswa" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md p-4 items-end sm:items-center justify-center">
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-8 max-h-[85vh] overflow-y-auto shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-slate-800">Data Siswa 7J</h3>
+                <button onclick="closeModal('modalSiswa')" class="p-2 bg-slate-100 rounded-full hover:bg-red-50 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-2" id="listSiswaContent"></div>
+        </div>
+    </div>
+
     <script>
-        // --- CONFIGURATION ---
-        const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfNMc8EVHqtqEHs1XRZZjW9F9NpjoY57YQXq4a6ic7Js/formResponse";
-        
-        const FORM_ENTRIES = {
-            noAbsen: "entry.209990792", 
-            status: "entry.689584092",
-            catatan: "entry.506104824"
-        };
+        // DATA JADWAL
+        const dataJadwal = [
+            { hari: 'SENIN', mapel: ' 2x B. Indonesia, 2x IPA, 2x IPS, BK, WUSTHO', jam: '08:10 - 15:00', color: 'blue' },
+            { hari: 'SELASA', mapel: '2x PJOK, 2x B. Sunda, 2x Seni Budaya, 2x MTK, 2x B. Inggris', jam: '07:30 - 15:00', color: 'emerald' },
+            { hari: 'RABU', mapel: '3x B. Indonesia, 2x PPKN, 2x MTK, B. Inggris, 2x PAIBP', jam: '07:30 - 15:00', color: 'orange' },
+            { hari: 'KAMIS', mapel: '9x Kokulikuler, Extra Pramuka', jam: '07:30 - 15:50', color: 'indigo' },
+            { hari: 'JUMAT', mapel: '2x IPA, IPS, 2x Informatika', jam: '07:30 - 11:30', color: 'pink' }
+        ];
 
-        let selectedId = null;
-        let currentStatus = 'Masuk';
+        // DATA NAMA SISWA
+        const daftarSiswa = [
+            "Akbar Maulana", "Aluna Devhania Azzahra", "Alwi Haikal Pauzan", "Aqila Damia Bilqis", "Aqila Hidayatul Kamilah",
+            "Azka Ahlan Farid", "Clarissa Nurmala Sari", "Deliana Indriani", "Desty Maharani", "Farhan Agustian",
+            "Ferdiansah", "Hadi Cahyana Putra", "Ika Putri", "Kenzo Satria Wijaya", "Keyla Oktavia Salsabila",
+            "M. Birly Algifati", "M. Fatoniy", "M. Raihan Faizal Shahan", "M. Asyraf Al Gifari", "M. Nadif Syakir Habibie",
+            "M. Rufi Pramudia", "Mutia Maharani", "Nur Laila Sa'adah", "Qonitah Khofifatussana", "Sandi Purnama Aripin",
+            "Satria Aditya Pratama", "Sheila Madinatul Ilmi", "Sri Dewi Rahmawati", "Syakila Dwi Haryani", "Tasya Lutfia Nisrina",
+            "Zahran Yassar Rizqy", "Zahrani Rahayu", "Zaki Fuadi Mufti", "Zio Hadzar Pamungkas"
+        ];
 
-        // --- TIME FUNCTIONS ---
-        function updateTime() {
-            const now = new Date();
-            const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-            document.getElementById('liveDate').innerText = now.toLocaleDateString('id-ID', options);
-            document.getElementById('liveClock').innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        function openModal(id) {
+            document.getElementById(id).classList.add('modal-active');
+            document.body.style.overflow = 'hidden';
         }
-        setInterval(updateTime, 1000);
-        updateTime();
 
-        // --- UI CONTROLLER ---
-        const ui = {
-            show(view) {
-                document.getElementById('viewGrid').classList.toggle('hidden', view !== 'grid');
-                document.getElementById('viewDetail').classList.toggle('hidden', view !== 'detail');
-                window.scrollTo(0, 0);
-            },
-            setStatus(s) {
-                currentStatus = s;
-                ['Masuk', 'Izin', 'Sakit'].forEach(id => {
-                    const el = document.getElementById(`st${id}`);
-                    el.className = "status-btn p-4 rounded-2xl flex flex-col items-center gap-2";
-                });
-                document.getElementById(`st${s}`).classList.add(`active-${s.toLowerCase()}`);
-            },
-            renderGrid() {
-                const container = document.getElementById('studentContainer');
-                container.innerHTML = '';
-                for (let i = 1; i <= 34; i++) {
-                    const btn = document.createElement('button');
-                    btn.className = "aspect-square rounded-2xl border-2 border-slate-200 bg-white text-slate-800 flex flex-col items-center justify-center active:scale-90 transition-transform";
-                    btn.innerHTML = `<span class="text-xl font-extrabold">${i}</span>`;
-                    btn.onclick = () => {
-                        selectedId = i;
-                        document.getElementById('detNama').innerText = `Siswa No. ${i}`;
-                        document.getElementById('reasonInput').value = '';
-                        this.setStatus('Masuk');
-                        this.show('detail');
-                    };
-                    container.appendChild(btn);
-                }
-            }
-        };
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('modal-active');
+            document.body.style.overflow = 'auto';
+        }
 
-        // --- SAVE DATA LOGIC ---
-        document.getElementById('btnSave').onclick = async () => {
-            const note = document.getElementById('reasonInput').value.trim();
-            
-            // Validasi: Jika tidak masuk, alasan wajib diisi
-            if (currentStatus !== 'Masuk' && !note) {
-                return alert("Harap isi alasan (Izin/Sakit) pada kolom catatan!");
-            }
+        function initDashboard() {
+            // Render Jadwal
+            const jContainer = document.getElementById('jadwalContent');
+            jContainer.innerHTML = dataJadwal.map(item => `
+                <div class="p-4 bg-${item.color}-50 border border-${item.color}-100 rounded-2xl flex justify-between items-center">
+                    <div>
+                        <p class="text-[10px] font-bold text-${item.color}-600 uppercase mb-1">${item.hari}</p>
+                        <p class="font-bold text-slate-800">${item.mapel}</p>
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-400 bg-white px-3 py-1 rounded-full shadow-sm">${item.jam}</span>
+                </div>
+            `).join('');
 
-            const btn = document.getElementById('btnSave');
-            btn.disabled = true;
-            btn.innerText = "SEDANG MENYIMPAN...";
+            // Render Siswa
+            const sContainer = document.getElementById('listSiswaContent');
+            sContainer.innerHTML = daftarSiswa.map((nama, i) => `
+                <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-transparent hover:border-blue-200 hover:bg-white transition-all">
+                    <span class="w-10 h-10 flex items-center justify-center bg-white rounded-xl text-sm font-extrabold text-blue-600 shadow-sm">${i + 1}</span>
+                    <span class="font-bold text-slate-700">${nama}</span>
+                </div>
+            `).join('');
 
-            // Membungkus data ke format URL Search Params (paling stabil untuk Google Form)
-            const params = new URLSearchParams();
-            params.append(FORM_ENTRIES.noAbsen, selectedId);
-            params.append(FORM_ENTRIES.status, currentStatus);
-            params.append(FORM_ENTRIES.catatan, note || '-');
+            lucide.createIcons();
+        }
 
-            try {
-                // Mengirim ke Google Form dengan mode no-cors
-                await fetch(GOOGLE_FORM_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: params.toString()
-                });
-                
-                // Notifikasi Sukses
-                alert(`Absensi Siswa No. ${selectedId} (${currentStatus}) berhasil disimpan.`);
-                ui.show('grid'); 
-            } catch (error) {
-                console.error("Submission error:", error);
-                alert("Gagal mengirim data. Pastikan Anda terhubung ke internet.");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i data-lucide="save" class="w-5 h-5 text-green-400"></i> SIMPAN DATA`;
-                lucide.createIcons();
-            }
-        };
-
-        // Inisialisasi awal
-        ui.renderGrid();
-        lucide.createIcons();
+        window.onload = initDashboard;
     </script>
 </body>
 </html>
